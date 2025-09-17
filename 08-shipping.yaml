@@ -1,0 +1,36 @@
+- name: configure shipping component
+  hosts: shipping
+  become: yes
+  tasks:
+  - name: install maven and mysql
+    ansible.builtin.dnf:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - maven
+      - mysql
+
+  - name: install PyMySQL and cryptography 
+    ansible.builtin.pip:
+      name: "{{ item }}"
+      executable: pip3.9
+    loop:
+      - cryptography
+      - PyMySQL
+
+  ...
+
+  - name: import data into cities DB
+    tags:
+      - import
+    community.mysql.mysql_db:
+      name: cities
+      login_user: root
+      login_password: RoboShop@1
+      login_host: mysql.gurulabs.xyz
+      state: import
+      target: "{{ item }}"
+    loop:
+      - /app/db/schema.sql
+      - /app/db/app-user.sql
+      - /app/db/master-data.sql
