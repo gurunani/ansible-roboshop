@@ -116,7 +116,7 @@
 #       enabled: yes
 
 
-    - name: configure payment server
+- name: configure payment server
   become: yes
   hosts: payment
   tasks:
@@ -161,7 +161,7 @@
         owner: roboshop
         group: roboshop
 
-    - name: install uwsgi with pcre support
+    - name: install uwsgi with dependencies
       ansible.builtin.pip:
         name: 
           - uwsgi
@@ -193,12 +193,6 @@
         owner: roboshop
         group: roboshop
         mode: '0644'
-
-    - name: create log directory
-      ansible.builtin.file:
-        path: /var/log
-        state: directory
-        mode: '0755'
 
     - name: create payment log file
       ansible.builtin.file:
