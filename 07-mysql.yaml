@@ -1,18 +1,66 @@
+# - name: configure mysql component
+#   hosts: mysql
+#   become: yes
+#   tasks:
+#   - name: install mysql server
+#     ansible.builtin.dnf:
+#       name: mysql-server
+#       state: installed
+
+#   - name: start mysql server
+#     ansible.builtin.service:
+#       name: mysqld
+#       state: started
+#       enabled: yes
+
+
+#   - name: setp root password
+#     ansible.builtin.command: mysql_secure_installation --set-root-pass RoboShop@1
+
 - name: configure mysql component
   hosts: mysql
   become: yes
   tasks:
-  - name: install mysql server
-    ansible.builtin.dnf:
-      name: mysql-server
-      state: installed
+    - name: install mysql server
+      ansible.builtin.dnf:
+        name: mysql-server
+        state: present
 
-  - name: start mysql server
-    ansible.builtin.service:
-      name: mysqld
-      state: started
-      enabled: yes
+    - name: start and enable mysql server
+      ansible.builtin.service:
+        name: mysqld
+        state: started
+        enabled: yes
 
+    - name: check if root password is already set
+      ansible.builtin.shell: |
+        mysql -u root -e "SELECT 1;" 2>/dev/null
+      register: mysql_root_check
+      ignore_errors: yes
+      changed_when: false
 
-  - name: setp root password
-    ansible.builtin.command: mysql_secure_installation --set-root-pass RoboShop@1
+    - name: set root password for first time
+      ansible.builtin.shell: |
+        mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'RoboShop@1';"
+      when: mysql_root_check.rc == 0
+      ignore_errors: yes
+
+    - name: create root user for remote access
+      ansible.builtin.shell: |
+        mysql -u root -pRoboShop@1 -e "CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY 'RoboShop@1';"
+      ignore_errors: yes
+
+    - name: grant all privileges to root user
+      ansible.builtin.shell: |
+        mysql -u root -pRoboShop@1 -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;"
+      ignore_errors: yes
+
+    - name: flush privileges
+      ansible.builtin.shell: |
+        mysql -u root -pRoboShop@1 -e "FLUSH PRIVILEGES;"
+      ignore_errors: yes
+
+    - name: restart mysql server to apply changes
+      ansible.builtin.service:
+        name: mysqld
+        state: restarted
