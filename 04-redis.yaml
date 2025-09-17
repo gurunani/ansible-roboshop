@@ -1,6 +1,6 @@
 # - name: install redis component
 #   hosts: redis
-#   become: allow
+#   become: yes
 #   tasks:
 #   - name: disable redis default module
 #     ansible.builtin.command: dnf module disable redis -y
@@ -23,14 +23,14 @@
 #     ansible.builtin.lineinfile:
 #       path: /etc/redis/redis.conf
 #       regexp: 'protected-mode'
-#       line: protechted-mode on
+#       line: protected-mode on
 
 # # you can use replace instead of lineinfile — both modules can change text in files, but they serve slightly different purposes:
 #   - name: enable and start redis
 #     ansible.builtin.service:
 #       name: redis
-#       state: start
-#       enabled :yes
+#       state: started
+#       enabled: yes
 
 - name: install redis component
   hosts: redis
