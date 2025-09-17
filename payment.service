@@ -1,8 +1,11 @@
 [Unit]
 Description=Payment Service
+After=network.target
 
 [Service]
+Type=notify
 User=roboshop
+Group=roboshop
 WorkingDirectory=/app
 Environment=CART_HOST=cart.gurulabs.xyz
 Environment=CART_PORT=8080
@@ -12,9 +15,11 @@ Environment=AMQP_HOST=rabbitmq.gurulabs.xyz
 Environment=AMQP_USER=roboshop
 Environment=AMQP_PASS=roboshop123
 
-ExecStart=/usr/local/bin/uwsgi --ini payment.ini
-ExecStop=/bin/kill -9 $MAINPID
-SyslogIdentifier=payment
+ExecStart=/usr/local/bin/uwsgi --ini /app/payment.ini
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
