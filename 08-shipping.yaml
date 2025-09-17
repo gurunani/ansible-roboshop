@@ -1,34 +1,131 @@
+# - name: configure shipping component
+#   hosts: shipping
+#   become: yes
+#   tasks:
+#   - name: install maven and mysql
+#     ansible.builtin.dnf:
+#       name: "{{ item }}"
+#       state: present
+#     loop:
+#       - maven
+#       - mysql
+
+#   - name: install PyMySQL and cryptography 
+#     ansible.builtin.pip:
+#       name: "{{ item }}"
+#       executable: pip3.9
+#     loop:
+#       - cryptography
+#       - PyMySQL
+
+#   - name: import data into cities DB
+#     tags:
+#       - import
+#     community.mysql.mysql_db:
+#       name: cities
+#       login_user: root
+#       login_password: RoboShop@1
+#       login_host: mysql.gurulabs.xyz
+#       state: import
+#       target: "{{ item }}"
+#     loop:
+#       - /app/db/schema.sql
+#       - /app/db/app-user.sql
+#       - /app/db/master-data.sql
+
 - name: configure shipping component
   hosts: shipping
   become: yes
   tasks:
-  - name: install maven and mysql
-    ansible.builtin.dnf:
-      name: "{{ item }}"
-      state: present
-    loop:
-      - maven
-      - mysql
+    - name: install maven and mysql client
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - maven
+        - mysql
 
-  - name: install PyMySQL and cryptography 
-    ansible.builtin.pip:
-      name: "{{ item }}"
-      executable: pip3.9
-    loop:
-      - cryptography
-      - PyMySQL
+    - name: install PyMySQL and cryptography 
+      ansible.builtin.pip:
+        name: "{{ item }}"
+        executable: pip3.9
+      loop:
+        - cryptography
+        - PyMySQL
 
-  - name: import data into cities DB
-    tags:
-      - import
-    community.mysql.mysql_db:
-      name: cities
-      login_user: root
-      login_password: RoboShop@1
-      login_host: mysql.gurulabs.xyz
-      state: import
-      target: "{{ item }}"
-    loop:
-      - /app/db/schema.sql
-      - /app/db/app-user.sql
-      - /app/db/master-data.sql
+    - name: add roboshop user
+      ansible.builtin.user:
+        name: roboshop
+        system: yes
+        home: /app
+        shell: /sbin/nologin
+        comment: "roboshop system user"
+
+    - name: create app directory
+      ansible.builtin.file:
+        path: /app
+        state: directory
+        owner: roboshop
+        group: roboshop
+        mode: '0755'
+
+    - name: download shipping application
+      ansible.builtin.get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip
+        dest: /tmp/shipping.zip
+
+    - name: extract shipping application
+      ansible.builtin.unarchive:
+        src: /tmp/shipping.zip
+        dest: /app
+        remote_src: yes
+        owner: roboshop
+        group: roboshop
+
+    - name: build shipping application
+      ansible.builtin.command: mvn clean package
+      args:
+        chdir: /app
+      become_user: roboshop
+
+    - name: rename shipping jar
+      ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
+      args:
+        chdir: /app
+      become_user: roboshop
+
+    - name: copy shipping systemd service
+      ansible.builtin.copy:
+        src: shipping.service
+        dest: /etc/systemd/system/shipping.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: yes
+
+    - name: enable and start shipping service
+      ansible.builtin.service:
+        name: shipping
+        state: started
+        enabled: yes
+
+    - name: import schema files into MySQL
+      community.mysql.mysql_db:
+        name: cities
+        login_user: root
+        login_password: RoboShop@1
+        login_host: mysql.gurulabs.xyz
+        state: import
+        target: "{{ item }}"
+      loop:
+        - /app/db/schema.sql
+        - /app/db/app-user.sql
+        - /app/db/master-data.sql
+
+    - name: restart shipping after schema load
+      ansible.builtin.service:
+        name: shipping
+        state: restarted
