@@ -33,6 +33,9 @@
         url: https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip
         dest: /tmp/catalogue.zip
 
+# this module thinks file exist on ansible control server, needs to extract on to remote machine
+# remote_src: yes means files already exist in catalogue server
+
     - name: Extract catalogue code
       ansible.builtin.unarchive:
         src: /tmp/catalogue.zip
@@ -82,7 +85,7 @@
         cmd: mongosh --host mongodb.gurulabs.xyz < /app/db/master-data.js
       when: catalogue_output.stdout | int < 0
 
-
+# chat gpt code 
 # - name: Configure catalogue component
 #   hosts: catalogue
 #   become: yes
@@ -171,3 +174,4 @@
 #       ansible.builtin.shell:
 #         cmd: mongosh --host mongodb.gurulabs.xyz < /app/db/master-data.js
 #       when: catalogue_output.stdout | int < 0
+
