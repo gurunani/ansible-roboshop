@@ -70,4 +70,4 @@ That's it! Your e-commerce store is live! 🎉
 
 # Roboshop 3 Tier Architecture
 
-![Diagram](images/roboshop.png)
+![Diagram](images/roboshop.svg)
