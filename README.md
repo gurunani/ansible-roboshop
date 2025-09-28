@@ -71,4 +71,4 @@ That's it! Your e-commerce store is live! 🎉
 # Roboshop 3 Tier Architecture
 
 <!-- ![Diagram Description](Downloads/roboshop.drawio.png) -->
-![Diagram](C:\devops\repos\ansible-roboshop/roboshop.drawio.png)
+![Diagram](images/roboshop.png)
