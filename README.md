@@ -67,3 +67,9 @@ Visit your frontend server IP - your store is ready!
 - Internet connection
 
 That's it! Your e-commerce store is live! 🎉
+
+# Roboshop 3 Tier Architecture
+
+![alt text][def]
+
+[def]: roboshop.svg
